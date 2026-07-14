@@ -1,0 +1,37 @@
+name: Build & Deploy App
+
+on:
+  repository_dispatch:
+    types: [app_build_ready]
+
+jobs:
+  deploy:
+    runs-on: macos-latest
+    env:
+      BUILD_ID: ${{ github.event.client_payload.build_id }}
+      BUNDLE_ID: ${{ github.event.client_payload.bundle_id }}
+      BUILD_NUMBER: ${{ github.run_number }}
+      PLATFORM_API_URL: ${{ secrets.PLATFORM_API_URL }}
+      INTERNAL_API_TOKEN: ${{ secrets.INTERNAL_API_TOKEN }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_ITC_TEAM_ID: ${{ secrets.APPLE_ITC_TEAM_ID }}
+      PLATFORM_APPLE_ID: ${{ secrets.PLATFORM_APPLE_ID }}
+      MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy iOS trial (TestFlight)
+        run: bundle exec fastlane ios deploy_trial
+        working-directory: deploy/ios
+      - name: Notify backend
+        run: |
+          curl -X POST "$PLATFORM_API_URL/internal/builds/$BUILD_ID/trial-deployed" \
+            -H "Authorization: Bearer $INTERNAL_API_TOKEN"
+
+  release_production:
+    if: github.event.client_payload.stage == 'production'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy iOS production
+        run: bundle exec fastlane ios deploy_production
+        working-directory: deploy/ios
