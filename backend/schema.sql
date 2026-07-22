@@ -67,3 +67,16 @@ CREATE TABLE daily_claims (
   share_bonus_count INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (user_id, claim_date)
 );
+
+-- The backend connects as the table owner via DATABASE_URL and bypasses RLS
+-- regardless; this only closes off Supabase's auto-generated public REST API
+-- (PostgREST), which would otherwise expose these tables to anyone with the
+-- project's anon key since no policies are defined.
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE token_balances ENABLE ROW LEVEL SECURITY;
+ALTER TABLE token_ledger ENABLE ROW LEVEL SECURITY;
+ALTER TABLE builds ENABLE ROW LEVEL SECURITY;
+ALTER TABLE social_shares ENABLE ROW LEVEL SECURITY;
+ALTER TABLE referrals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE daily_claims ENABLE ROW LEVEL SECURITY;
