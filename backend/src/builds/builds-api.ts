@@ -13,6 +13,14 @@ const STAGE_COST: Record<string, number> = {
   spec:0,architecture:0,scaffold:5,screens:25,logic:15,polish:8,qa:5
 };
 
+function requireInternalAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const token = process.env.INTERNAL_API_TOKEN;
+  if (!token || req.headers.authorization !== `Bearer ${token}`) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  next();
+}
+
 router.post("/builds",requireAuth,asyncHandler(async(req,res)=>{
   const userId=(req as any).userId;
   const {prompt,platform}=req.body;
@@ -61,6 +69,13 @@ router.post("/builds/:buildId/advance",requireAuth,asyncHandler(async(req,res)=>
   const done=state.completedStages.length===STAGE_ORDER.length;
   await db.query(`UPDATE builds SET state=$1,status=$2 WHERE id=$3`,[JSON.stringify(state),done?"trial_complete":"in_progress",buildId]);
   res.json({status:done?"complete":"in_progress",stageCompleted:next,nextStage:STAGE_ORDER[idx+1]??null});
+}));
+
+router.post("/internal/builds/:buildId/trial-deployed",requireInternalAuth,asyncHandler(async(req,res)=>{
+  const {buildId}=req.params;
+  const {rows}=await db.query(`UPDATE builds SET status='trial_deployed' WHERE id=$1 RETURNING id`,[buildId]);
+  if(!rows.length) return res.status(404).json({error:"Build not found"});
+  res.json({ok:true});
 }));
 
 export default router;
