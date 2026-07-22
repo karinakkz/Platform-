@@ -16,6 +16,7 @@ async function req<T>(path:string, opts:RequestInit={}):Promise<T> {
 }
 
 export const api = {
+  getMe:()=>req<{userId:string;email:string;membershipStatus:string;referralCode:string;tokenBalance:number}>("/auth/me"),
   claimDaily:()=>req<{granted:number}>("/tokens/daily-claim",{method:"POST"}),
   createBuild:(prompt:string,platform?:string)=>req<{buildId:string;appName:string;completedStages:string[];currentStage:string|null;spec:any}>("/builds",{method:"POST",body:JSON.stringify({prompt,platform})}),
   listBuilds:()=>req<{builds:any[]}>("/builds"),

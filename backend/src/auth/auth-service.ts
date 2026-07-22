@@ -33,6 +33,25 @@ router.post("/auth/login", asyncHandler(async (req, res) => {
   res.json({ token, userId: rows[0].id });
 }));
 
+router.get("/auth/me", requireAuth, asyncHandler(async (req, res) => {
+  const userId = (req as any).userId;
+  const { rows } = await db.query(
+    `SELECT u.id, u.email, u.membership_status, u.referral_code, COALESCE(b.balance, 0) AS balance
+     FROM users u LEFT JOIN token_balances b ON b.user_id = u.id
+     WHERE u.id = $1`,
+    [userId]
+  );
+  if (!rows.length) return res.status(404).json({ error: "User not found" });
+  const row = rows[0];
+  res.json({
+    userId: row.id,
+    email: row.email,
+    membershipStatus: row.membership_status,
+    referralCode: row.referral_code,
+    tokenBalance: row.balance,
+  });
+}));
+
 export function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
   const h = req.headers.authorization;
   if (!h?.startsWith("Bearer ")) return res.status(401).json({ error: "Missing auth token" });

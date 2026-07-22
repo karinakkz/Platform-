@@ -24,7 +24,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}) {
   const [advancing, setAdvancing] = useState(false);
   const [error, setError] = useState<string|null>(null);
 
-  useEffect(()=>{ loadBuilds(); },[]);
+  useEffect(()=>{ loadBuilds(); loadProfile(); },[]);
 
   async function loadBuilds() {
     try {
@@ -34,6 +34,14 @@ function Dashboard({onLogout}:{onLogout:()=>void}) {
         const first=b[0];
         setActiveBuild({id:first.id,appName:first.app_name,completedStages:[],currentStage:null});
       }
+    } catch {}
+  }
+
+  async function loadProfile() {
+    try {
+      const p=await api.getMe();
+      setBalance(p.tokenBalance);
+      setMembership(p.membershipStatus);
     } catch {}
   }
 
@@ -56,6 +64,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}) {
     try {
       const r=await api.advanceBuild(activeBuild.id);
       setActiveBuild(prev=>prev?{...prev,completedStages:[...prev.completedStages,r.stageCompleted],currentStage:r.nextStage}:prev);
+      loadProfile();
     } catch(e) {
       if(e instanceof ApiError && e.status===402) setError(e.body.message);
       else setError("Build step failed — tap to try again");
@@ -87,7 +96,7 @@ function Dashboard({onLogout}:{onLogout:()=>void}) {
 
       <main className="main">
         <div style={{display:"flex",flexDirection:"column",gap:16}}>
-          <TokenWallet balance={balance} membership={membership} onRefresh={()=>{}}/>
+          <TokenWallet balance={balance} membership={membership} onRefresh={loadProfile}/>
 
           {!activeBuild&&(
             <div className="card">
