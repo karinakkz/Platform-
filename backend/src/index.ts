@@ -18,5 +18,10 @@ app.use(serverRouter);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
+app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error(err);
+  res.status(500).json({ error: "Internal server error" });
+});
+
 const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => console.log(`API running on :${PORT}`));

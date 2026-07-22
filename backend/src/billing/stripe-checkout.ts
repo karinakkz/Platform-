@@ -2,12 +2,13 @@ import Stripe from "stripe";
 import express from "express";
 import { TOKEN_PACKS, MEMBERSHIP_PLANS, RELEASE_FEE_USD } from "./pricing";
 import { requireAuth } from "../auth/auth-service";
+import { asyncHandler } from "../lib/async-handler";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const FRONTEND = process.env.FRONTEND_URL ?? "https://yourplatform.app";
 export const router = express.Router();
 
-router.post("/checkout/tokens",requireAuth,async(req,res)=>{
+router.post("/checkout/tokens",requireAuth,asyncHandler(async(req,res)=>{
   const userId=(req as any).userId;
   const {packId}=req.body;
   const pack=TOKEN_PACKS.find(p=>p.id===packId);
@@ -21,9 +22,9 @@ router.post("/checkout/tokens",requireAuth,async(req,res)=>{
     cancel_url:`${FRONTEND}/billing`,
   });
   res.json({url:session.url});
-});
+}));
 
-router.post("/checkout/membership",requireAuth,async(req,res)=>{
+router.post("/checkout/membership",requireAuth,asyncHandler(async(req,res)=>{
   const userId=(req as any).userId;
   const {planId}=req.body;
   const plan=MEMBERSHIP_PLANS.find(p=>p.id===planId);
@@ -37,9 +38,9 @@ router.post("/checkout/membership",requireAuth,async(req,res)=>{
     cancel_url:`${FRONTEND}/billing`,
   });
   res.json({url:session.url});
-});
+}));
 
-router.post("/checkout/release-fee",requireAuth,async(req,res)=>{
+router.post("/checkout/release-fee",requireAuth,asyncHandler(async(req,res)=>{
   const userId=(req as any).userId;
   const {buildId}=req.body;
   const session=await stripe.checkout.sessions.create({
@@ -51,6 +52,6 @@ router.post("/checkout/release-fee",requireAuth,async(req,res)=>{
     cancel_url:`${FRONTEND}/builds/${buildId}`,
   });
   res.json({url:session.url});
-});
+}));
 
 export default router;

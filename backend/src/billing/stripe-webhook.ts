@@ -1,12 +1,13 @@
 import Stripe from "stripe";
 import express from "express";
 import { Pool } from "pg";
+import { asyncHandler } from "../lib/async-handler";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const db = new Pool({ connectionString: process.env.DATABASE_URL });
 export const router = express.Router();
 
-router.post("/webhooks/stripe",express.raw({type:"application/json"}),async(req,res)=>{
+router.post("/webhooks/stripe",express.raw({type:"application/json"}),asyncHandler(async(req,res)=>{
   let event: Stripe.Event;
   try{
     event=stripe.webhooks.constructEvent(req.body,req.headers["stripe-signature"] as string,process.env.STRIPE_WEBHOOK_SECRET!);
@@ -35,9 +36,9 @@ router.post("/webhooks/stripe",express.raw({type:"application/json"}),async(req,
   }
 
   res.json({received:true});
-});
+}));
 
-async function credit(userId:string,amount:number,reason:string,refId:string){
+export async function credit(userId:string,amount:number,reason:string,refId:string){
   const client=await db.connect();
   try{
     await client.query("BEGIN");

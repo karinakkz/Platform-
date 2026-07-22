@@ -3,12 +3,13 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { randomUUID } from "crypto";
 import { Pool } from "pg";
+import { asyncHandler } from "../lib/async-handler";
 
 const db = new Pool({ connectionString: process.env.DATABASE_URL });
 export const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET!;
 
-router.post("/auth/signup", async (req, res) => {
+router.post("/auth/signup", asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password || password.length < 8)
     return res.status(400).json({ error: "Email and 8+ char password required" });
@@ -21,16 +22,16 @@ router.post("/auth/signup", async (req, res) => {
   await db.query(`INSERT INTO token_balances (user_id,balance) VALUES ($1,5)`,[id]);
   const token = jwt.sign({ userId: id }, JWT_SECRET, { expiresIn: "30d" });
   res.json({ token, userId: id, referralCode });
-});
+}));
 
-router.post("/auth/login", async (req, res) => {
+router.post("/auth/login", asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const { rows } = await db.query(`SELECT id,password_hash FROM users WHERE email=$1`,[email]);
   if (!rows.length || !await bcrypt.compare(password, rows[0].password_hash))
     return res.status(401).json({ error: "Invalid email or password" });
   const token = jwt.sign({ userId: rows[0].id }, JWT_SECRET, { expiresIn: "30d" });
   res.json({ token, userId: rows[0].id });
-});
+}));
 
 export function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
   const h = req.headers.authorization;

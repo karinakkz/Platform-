@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { writeFileSync, mkdirSync } from "fs";
 
 const anthropic = new Anthropic();
-const MODEL = "claude-sonnet-4-6";
+const MODEL = "claude-sonnet-5";
 
 export type BuildStage = "spec"|"architecture"|"scaffold"|"screens"|"logic"|"polish"|"qa";
 export const STAGE_ORDER: BuildStage[] = ["spec","architecture","scaffold","screens","logic","polish","qa"];

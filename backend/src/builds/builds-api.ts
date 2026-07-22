@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { Pool } from "pg";
 import { requireAuth } from "../auth/auth-service";
 import { runNextStage, STAGE_ORDER, BuildState } from "./builder";
+import { asyncHandler } from "../lib/async-handler";
 
 const db = new Pool({ connectionString: process.env.DATABASE_URL });
 export const router = express.Router();
@@ -12,7 +13,7 @@ const STAGE_COST: Record<string, number> = {
   spec:0,architecture:0,scaffold:5,screens:25,logic:15,polish:8,qa:5
 };
 
-router.post("/builds",requireAuth,async(req,res)=>{
+router.post("/builds",requireAuth,asyncHandler(async(req,res)=>{
   const userId=(req as any).userId;
   const {prompt,platform}=req.body;
   if(!prompt?.trim()) return res.status(400).json({error:"Prompt required"});
@@ -24,15 +25,15 @@ router.post("/builds",requireAuth,async(req,res)=>{
   catch(e){return res.status(502).json({error:"Couldn't generate spec — try rephrasing"});}
   await db.query(`UPDATE builds SET state=$1 WHERE id=$2`,[JSON.stringify(state),buildId]);
   res.json({buildId,appName:state.spec?.appName??prompt.slice(0,40),completedStages:state.completedStages,currentStage:STAGE_ORDER.find(s=>!state.completedStages.includes(s))??null,spec:state.spec});
-});
+}));
 
-router.get("/builds",requireAuth,async(req,res)=>{
+router.get("/builds",requireAuth,asyncHandler(async(req,res)=>{
   const userId=(req as any).userId;
   const {rows}=await db.query(`SELECT id,app_name,status,tokens_spent,release_fee_paid,created_at FROM builds WHERE user_id=$1 ORDER BY created_at DESC`,[userId]);
   res.json({builds:rows});
-});
+}));
 
-router.post("/builds/:buildId/advance",requireAuth,async(req,res)=>{
+router.post("/builds/:buildId/advance",requireAuth,asyncHandler(async(req,res)=>{
   const {buildId}=req.params;
   const userId=(req as any).userId;
   const {rows}=await db.query(`SELECT * FROM builds WHERE id=$1 AND user_id=$2`,[buildId,userId]);
@@ -60,6 +61,6 @@ router.post("/builds/:buildId/advance",requireAuth,async(req,res)=>{
   const done=state.completedStages.length===STAGE_ORDER.length;
   await db.query(`UPDATE builds SET state=$1,status=$2 WHERE id=$3`,[JSON.stringify(state),done?"trial_complete":"in_progress",buildId]);
   res.json({status:done?"complete":"in_progress",stageCompleted:next,nextStage:STAGE_ORDER[idx+1]??null});
-});
+}));
 
 export default router;
