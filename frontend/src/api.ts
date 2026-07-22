@@ -25,4 +25,5 @@ export const api = {
   checkoutTokens:(packId:string)=>req<{url:string}>("/checkout/tokens",{method:"POST",body:JSON.stringify({packId})}),
   checkoutMembership:(planId:string)=>req<{url:string}>("/checkout/membership",{method:"POST",body:JSON.stringify({planId})}),
   checkoutReleaseFee:(buildId:string)=>req<{url:string}>("/checkout/release-fee",{method:"POST",body:JSON.stringify({buildId})}),
+  openBillingPortal:()=>req<{url:string}>("/billing/portal",{method:"POST"}),
 };

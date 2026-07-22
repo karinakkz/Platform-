@@ -16,6 +16,9 @@ router.post("/webhooks/stripe",express.raw({type:"application/json"}),asyncHandl
   if(event.type==="checkout.session.completed"){
     const s=event.data.object as Stripe.Checkout.Session;
     const {type,userId}=s.metadata!;
+    if(s.customer){
+      await db.query(`UPDATE users SET stripe_customer_id=$1 WHERE id=$2`,[s.customer,userId]);
+    }
     if(type==="token_purchase"){
       const tokens=parseInt(s.metadata!.tokens,10);
       await credit(userId,tokens,"purchase",s.id);
@@ -33,6 +36,14 @@ router.post("/webhooks/stripe",express.raw({type:"application/json"}),asyncHandl
     const sub=event.data.object as Stripe.Subscription;
     const status=sub.status==="active"?"active":"expired";
     await db.query(`UPDATE users SET membership_status=$1 WHERE id=(SELECT user_id FROM subscriptions WHERE stripe_subscription_id=$2)`,[status,sub.id]);
+  }
+
+  if(event.type==="invoice.payment_failed"){
+    const invoice=event.data.object as Stripe.Invoice;
+    const subId=invoice.subscription as string|null;
+    if(subId){
+      await db.query(`UPDATE users SET membership_status='past_due' WHERE id=(SELECT user_id FROM subscriptions WHERE stripe_subscription_id=$1)`,[subId]);
+    }
   }
 
   res.json({received:true});

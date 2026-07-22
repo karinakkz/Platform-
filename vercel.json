@@ -1,9 +1,5 @@
 {
   "buildCommand": "npm install && npm run build",
   "outputDirectory": "dist",
-  "framework": "vite",
-  "rootDirectory": "frontend",
-  "env": {
-    "VITE_API_URL": "@platform-api-url"
-  }
+  "framework": "vite"
 }

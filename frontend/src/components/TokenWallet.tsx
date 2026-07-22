@@ -27,6 +27,11 @@ export function TokenWallet({balance,membership,onRefresh}:{balance:number;membe
     try { const {url}=await api.checkoutMembership(planId); window.location.href=url; }
     catch { setLoading(null); }
   }
+  async function manageBilling() {
+    setLoading("portal");
+    try { const {url}=await api.openBillingPortal(); window.location.href=url; }
+    catch { setLoading(null); }
+  }
 
   return (
     <div className="card">
@@ -39,6 +44,9 @@ export function TokenWallet({balance,membership,onRefresh}:{balance:number;membe
           <span style={{fontSize:12,padding:"3px 10px",borderRadius:20,background:membership==="active"?"rgba(45,212,167,0.15)":"rgba(154,154,174,0.15)",color:membership==="active"?"var(--mint)":"var(--text-muted)"}}>
             {membership==="active"?"Member":"Free trial"}
           </span>
+          {membership==="active"&&(
+            <button className="btn btn-ghost" style={{fontSize:12}} disabled={loading==="portal"} onClick={manageBilling}>Manage billing</button>
+          )}
           <button className="btn btn-ghost" style={{padding:"6px 10px",fontSize:12}} onClick={onRefresh}>↻</button>
         </div>
       </div>
