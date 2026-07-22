@@ -2,7 +2,7 @@ import express from "express";
 import { randomUUID } from "crypto";
 import { Pool } from "pg";
 import { requireAuth } from "../auth/auth-service";
-import { runNextStage, STAGE_ORDER, BuildState } from "../builder/builder";
+import { runNextStage, STAGE_ORDER, BuildState } from "./builder";
 
 const db = new Pool({ connectionString: process.env.DATABASE_URL });
 export const router = express.Router();
